@@ -7,6 +7,7 @@
 #include <isl/list.h>
 #include <isl/constraint.h>
 #include <isl/ilp.h>
+#include <isl/lp.h>
 #include <isl/aff.h>
 
 #ifdef OSL_SUPPORT
@@ -510,15 +511,20 @@ static struct isl_constraint *isl_constraint_read_from_matrix(
 	else
 		constraint = isl_inequality_alloc(ls);
 
-	for (j = 0; j < nvariables; ++j)
-		isl_constraint_set_coefficient(constraint, isl_dim_out, j,
-					       row[1 + j]);
+	for (j = 0; j < nvariables; ++j) {
+        isl_val *val = cloog_int_to_isl_val(row[1 + j]);
+		isl_constraint_set_coefficient_val(constraint, isl_dim_out, j, val);
+    }
 
-	for (j = 0; j < nparam; ++j)
-		isl_constraint_set_coefficient(constraint, isl_dim_param, j,
-					       row[1 + nvariables + j]);
+	for (j = 0; j < nparam; ++j) {
+        isl_val *val = cloog_int_to_isl_val(row[1 + nvariables + j]);
+		isl_constraint_set_coefficient_val(constraint, isl_dim_param, j, val);
+        isl_val_free(val);
+    }
 
-	isl_constraint_set_constant(constraint, row[1 + nvariables + nparam]);
+    isl_val *val = cloog_int_to_isl_val(row[1 + nvariables + nparam]);
+	isl_constraint_set_constant_val(constraint, val);
+    isl_val_free(val);
 
 	return constraint;
 }
@@ -780,9 +786,11 @@ void cloog_domain_stride(CloogDomain *domain, int strided_level,
 	cloog_int_t *stride, cloog_int_t *offset)
 {
 	isl_set *set = isl_set_from_cloog_domain(domain);
-	isl_set_dim_residue_class(set, strided_level - 1, stride, offset);
-	if (!isl_int_is_zero(*offset))
-		isl_int_sub(*offset, *stride, *offset);
+    isl_val *oval = cloog_int_to_isl_val(*offset);
+	isl_set_dim_residue_class_val(set, strided_level - 1, stride, &oval);
+    isl_val_free(oval);
+	if (!cloog_int_is_zero(*offset))
+		cloog_int_sub(*offset, *stride, *offset);
 	return;
 }
 
@@ -796,7 +804,7 @@ static int constraint_can_stride(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_can_stride *ccs = (struct cloog_can_stride *)user;
 	int i;
-	isl_int v;
+	isl_val *v;
 	unsigned n_div;
 
 	if (isl_constraint_is_equality(c)) {
@@ -804,19 +812,18 @@ static int constraint_can_stride(__isl_take isl_constraint *c, void *user)
 		return 0;
 	}
 
-	isl_int_init(v);
-	isl_constraint_get_coefficient(c, isl_dim_set, ccs->level - 1, &v);
-	if (isl_int_is_pos(v)) {
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccs->level - 1);
+	if (isl_val_is_pos(v)) {
 		n_div = isl_constraint_dim(c, isl_dim_div);
 		for (i = 0; i < n_div; ++i) {
-			isl_constraint_get_coefficient(c, isl_dim_div, i, &v);
-			if (!isl_int_is_zero(v))
+			v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
+			if (!isl_val_is_zero(v))
 				break;
 		}
 		if (i < n_div)
 			ccs->can_stride = 0;
 	}
-	isl_int_clear(v);
+	isl_val_free(v);
 	isl_constraint_free(c);
 
 	return 0;
@@ -903,7 +910,7 @@ struct cloog_stride_lower {
 static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_stride_lower *csl = (struct cloog_stride_lower *)user;
-	isl_int v;
+	isl_val *v;
 	isl_constraint *bound;
 	isl_aff *b;
 
@@ -912,10 +919,9 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 		return 0;
 	}
 
-	isl_int_init(v);
-	isl_constraint_get_coefficient(c, isl_dim_set, csl->level - 1, &v);
-	if (!isl_int_is_pos(v)) {
-		isl_int_clear(v);
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, csl->level - 1);
+	if (!isl_val_is_pos(v)) {
+		isl_val_free(v);
 		isl_constraint_free(c);
 
 		return 0;
@@ -924,19 +930,21 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 	b = isl_constraint_get_bound(c, isl_dim_set, csl->level - 1);
 
 	b = isl_aff_neg(b);
-	b = isl_aff_add_constant(b, csl->stride->offset);
-	b = isl_aff_scale_down(b, csl->stride->stride);
+	b = isl_aff_add_constant_val(b, cloog_int_to_isl_val(csl->stride->offset));
+	b = isl_aff_scale_down_val(b, cloog_int_to_isl_val(csl->stride->stride));
 	b = isl_aff_floor(b);
-	b = isl_aff_scale(b, csl->stride->stride);
-	isl_int_neg(v, csl->stride->offset);
-	b = isl_aff_add_constant(b, v);
+	b = isl_aff_scale_val(b, cloog_int_to_isl_val(csl->stride->stride));
+    v = isl_val_int_from_si(isl_constraint_get_ctx(c), 
+            cloog_int_to_isl_val(csl->stride->offset));
+    v = isl_val_neg(v);
+	b = isl_aff_add_constant_val(b, v);
 	b = isl_aff_add_coefficient_si(b, isl_dim_in, csl->level - 1, 1);
 
 	bound = isl_inequality_from_aff(b);
 
 	csl->bounds = isl_basic_set_add_constraint(csl->bounds, bound);
 
-	isl_int_clear(v);
+	isl_val_free(v);
 	isl_constraint_free(c);
 
 	return 0;
@@ -960,7 +968,7 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 static int constraint_stride_lower_c(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_stride_lower *csl = (struct cloog_stride_lower *)user;
-	isl_int v;
+	isl_val *v;
 	isl_constraint *bound;
 	isl_constraint *csl_c;
 	isl_aff *d, *b;
@@ -970,10 +978,9 @@ static int constraint_stride_lower_c(__isl_take isl_constraint *c, void *user)
 		return 0;
 	}
 
-	isl_int_init(v);
-	isl_constraint_get_coefficient(c, isl_dim_set, csl->level - 1, &v);
-	if (!isl_int_is_pos(v)) {
-		isl_int_clear(v);
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, csl->level - 1);
+	if (!isl_val_is_pos(v)) {
+		isl_val_free(v);
 		isl_constraint_free(c);
 
 		return 0;
@@ -984,7 +991,7 @@ static int constraint_stride_lower_c(__isl_take isl_constraint *c, void *user)
 	d = isl_constraint_get_aff(csl_c);
 	d = isl_aff_drop_dims(d, isl_dim_div, 0, isl_aff_dim(d, isl_dim_div));
 	d = isl_aff_set_coefficient_si(d, isl_dim_in, csl->level - 1, 0);
-	d = isl_aff_scale(d, csl->stride->factor);
+	d = isl_aff_scale_val(d, cloog_int_to_isl_val(csl->stride->factor));
 
 	b = isl_constraint_get_bound(c, isl_dim_set, csl->level - 1);
 
@@ -1000,7 +1007,7 @@ static int constraint_stride_lower_c(__isl_take isl_constraint *c, void *user)
 
 	csl->bounds = isl_basic_set_add_constraint(csl->bounds, bound);
 
-	isl_int_clear(v);
+	isl_val_free(v);
 	isl_constraint_free(c);
 
 	return 0;
@@ -1090,26 +1097,25 @@ struct cloog_bound_split {
 static int constraint_bound_split(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_bound_split *cbs = (struct cloog_bound_split *)user;
-	isl_int v;
+	isl_val *v;
 	int i;
 	int handle = 0;
 
-	isl_int_init(v);
-	isl_constraint_get_coefficient(c, isl_dim_set, cbs->level - 1, &v);
-	if (!cbs->lower && isl_int_is_pos(v))
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, cbs->level - 1);
+	if (!cbs->lower && isl_val_is_pos(v))
 		cbs->lower = handle = 1;
-	else if (!cbs->upper && isl_int_is_neg(v))
+	else if (!cbs->upper && isl_val_is_neg(v))
 		cbs->upper = handle = 1;
 	if (handle) {
 		for (i = 0; i < isl_set_dim(cbs->set, isl_dim_param); ++i) {
-			isl_constraint_get_coefficient(c, isl_dim_param, i, &v);
-			if (isl_int_is_zero(v))
+			v = isl_constraint_get_coefficient_val(c, isl_dim_param, i);
+			if (isl_val_is_zero(v))
 				continue;
 			cbs->set = isl_set_split_dims(cbs->set,
 							isl_dim_param, i, 1);
 		}
 	}
-	isl_int_clear(v);
+	isl_val_free(v);
 	isl_constraint_free(c);
 
 	return (cbs->lower && cbs->upper) ? -1 : 0;
@@ -1212,7 +1218,7 @@ int cloog_scattering_lazy_block(CloogScattering *s1, CloogScattering *s2,
 	isl_map *map1 = isl_map_from_cloog_scattering(s1);
 	isl_map *map2 = isl_map_from_cloog_scattering(s2);
 	int fixed, block;
-	isl_int cst;
+	isl_val *cst;
 	unsigned n_scat;
 
 	n_scat = isl_map_dim(map1, isl_dim_out);
@@ -1225,22 +1231,23 @@ int cloog_scattering_lazy_block(CloogScattering *s1, CloogScattering *s2,
 	rel = isl_map_apply_domain(rel, isl_map_copy(map1));
 	rel = isl_map_apply_range(rel, isl_map_copy(map2));
 	delta = isl_map_deltas(rel);
-	isl_int_init(cst);
+    cst = NULL;
 	for (i = 0; i < n_scat; ++i) {
-		fixed = isl_set_fast_dim_is_fixed(delta, i, &cst);
-		if (fixed != 1)
+		/* fixed = isl_set_fast_dim_is_fixed(delta, i, &cst); */
+        cst = isl_set_plain_get_val_if_fixed(delta, isl_dim_set, i);
+		if (!cst)
 			break;
-		if (isl_int_is_zero(cst))
+		if (isl_val_is_zero(cst))
 			continue;
 		if (i + 1 < n_scat)
 			break;
-		if (!isl_int_is_one(cst))
+		if (!isl_val_is_one(cst))
 			break;
 		if (!injective_scattering(scattering))
 			break;
 	}
 	block = i >= n_scat;
-	isl_int_clear(cst);
+	isl_val_free(cst);
 	isl_set_free(delta);
 	return block;
 }
@@ -1631,49 +1638,45 @@ static void Euclid(cloog_int_t a, cloog_int_t b,
 static CloogStride *construct_stride(isl_constraint *c, int level)
 {
 	int i, n, sign;
-	isl_int v, m, gcd, stride, factor;
+	isl_val *v, *m, *gcd, *stride, *factor;
 	CloogStride *s;
+    isl_ctx *ctx;
 
 	if (!c)
 		return NULL;
 
-	isl_int_init(v);
-	isl_int_init(m);
-	isl_int_init(gcd);
-	isl_int_init(factor);
-	isl_int_init(stride);
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, level - 1);
+	sign = isl_val_sgn(v);
+	m = isl_val_abs(v);
 
-	isl_constraint_get_coefficient(c, isl_dim_set, level - 1, &v);
-	sign = isl_int_sgn(v);
-	isl_int_abs(m, v);
-
-	isl_int_set_si(gcd, 0);
+    ctx = isl_constraint_get_ctx(c);
+	gcd = isl_val_int_from_si(ctx, 0);
 	n = isl_constraint_dim(c, isl_dim_div);
 	for (i = 0; i < n; ++i) {
-		isl_constraint_get_coefficient(c, isl_dim_div, i, &v);
-		isl_int_gcd(gcd, gcd, v);
+		v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
+		gcd = isl_val_gcd(gcd, v);
 	}
 
-	isl_int_gcd(v, m, gcd);
-	isl_int_divexact(stride, gcd, v);
+	gcd = isl_val_gcd(v, m);
+	stride = isl_val_div(gcd, v);
 
-	if (isl_int_is_zero(stride) || isl_int_is_one(stride))
+	if (isl_val_is_zero(stride) || isl_val_is_one(stride))
 		s = NULL;
 	else {
 		Euclid(m, stride, &factor, &v, &gcd);
 		if (sign > 0)
-			isl_int_neg(factor, factor);
+			factor = isl_val_neg(factor);
 
 		c = isl_constraint_copy(c);
 		s = cloog_stride_alloc_from_constraint(stride,
 			    cloog_constraint_from_isl_constraint(c), factor);
 	}
 
-	isl_int_clear(stride);
-	isl_int_clear(factor);
-	isl_int_clear(gcd);
-	isl_int_clear(m);
-	isl_int_clear(v);
+	isl_val_free(stride);
+	isl_val_free(factor);
+	isl_val_free(gcd);
+	isl_val_free(m);
+	isl_val_free(v);
 
 	return s;
 }
@@ -1694,7 +1697,7 @@ static int find_stride(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_isl_find_stride_data *data;
 	int n;
-	isl_int v;
+	isl_val *v;
 
 	if (!isl_constraint_is_equality(c)) {
 		isl_constraint_free(c);
@@ -1714,13 +1717,11 @@ static int find_stride(__isl_take isl_constraint *c, void *user)
 		return 0;
 	}
 
-	isl_int_init(v);
-
-	isl_constraint_get_coefficient(c, isl_dim_set, data->level - 1, &v);
-	if (!isl_int_is_zero(v))
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, data->level - 1);
+	if (!isl_val_is_zero(v))
 		data->stride = construct_stride(c, data->level);
 
-	isl_int_clear(v);
+	isl_val_free(v);
 
 	isl_constraint_free(c);
 
@@ -1769,7 +1770,7 @@ struct cloog_can_unroll {
 	int level;
 	isl_constraint *c;
 	isl_set *set;
-	isl_int *n;
+	isl_val *n;
 };
 
 
@@ -1782,7 +1783,7 @@ struct cloog_can_unroll {
  * with l the given lower bound and i the iterator identified by level.
  */
 static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
-	__isl_keep isl_constraint *c, isl_int *v)
+	__isl_keep isl_constraint *c, isl_val *v)
 {
 	unsigned n_div;
 	isl_aff *aff;
@@ -1796,7 +1797,9 @@ static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
 	aff = isl_aff_ceil(aff);
 	aff = isl_aff_neg(aff);
 	aff = isl_aff_add_coefficient_si(aff, isl_dim_in, ccu->level - 1, 1);
-	res = isl_set_max(ccu->set, aff, v);
+	/* res = isl_set_max(ccu->set, aff, v); */
+    /* isl_set_max_val behavior has changed */
+	v = isl_set_max_val(ccu->set, aff);
 	isl_aff_free(aff);
 
 	if (res == isl_lp_unbounded)
@@ -1804,7 +1807,7 @@ static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
 
 	assert(res == isl_lp_ok);
 
-	cloog_int_add_ui(*v, *v, 1);
+	v = isl_val_add_ui(v, 1);
 
 	return 1;
 }
@@ -1818,21 +1821,20 @@ static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
 static int constraint_can_unroll(__isl_take isl_constraint *c, void *user)
 {
 	struct cloog_can_unroll *ccu = (struct cloog_can_unroll *)user;
-	isl_int v;
-	isl_int count;
+	isl_val *v;
+	isl_val *count;
 
-	isl_int_init(v);
-	isl_int_init(count);
-	isl_constraint_get_coefficient(c, isl_dim_set, ccu->level - 1, &v);
-	if (isl_int_is_pos(v) &&
-	    is_valid_unrolling_lower_bound(ccu, c, &count) &&
-	    (!ccu->c || isl_int_lt(count, *ccu->n))) {
+	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccu->level - 1);
+	if (isl_val_is_pos(v) &&
+	    is_valid_unrolling_lower_bound(ccu, c, count) &&
+	    (!ccu->c || isl_val_lt(count, ccu->n))) {
 		isl_constraint_free(ccu->c);
-		ccu->c = isl_constraint_copy(c);
-		isl_int_set(*ccu->n, count);
+		isl_val_to_cloog_int(isl_constraint_copy(c), &(ccu->c));
+		isl_val_to_cloog_int(isl_val_int_from_si(isl_constraint_get_ctx(c), 
+                    count), &(ccu->n));
 	}
-	isl_int_clear(count);
-	isl_int_clear(v);
+	isl_val_free(count);
+	isl_val_free(v);
 	isl_constraint_free(c);
 
 	return 0;
