@@ -559,15 +559,19 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 		v = cloog_constraint_variable_expr(constraint, 1 + i, names);
 
     cloog_int_t cint;
+    cloog_int_init(cint);
 
     isl_val_to_cloog_int(c, &cint);
+		r->elts[nb_elts++] = &new_clast_term(cint, v)->expr;
+
     //TODO: free isl_val c
     isl_val_free(c);
-
-		r->elts[nb_elts++] = &new_clast_term(cint, v)->expr;
+    cloog_int_clear(cint);
 	}
     
   cloog_int_t cint;
+  cloog_int_init(cint);
+
 	c = isl_aff_get_constant_val(div);
 	if (!isl_val_is_zero(c)) {
     isl_val_to_cloog_int(c, &cint);
@@ -584,6 +588,7 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 
   //TODO: c already free'd. remove below!
 	//isl_val_free(c);
+  cloog_int_clear(cint);
 
 	isl_aff_free(div);
 
@@ -943,12 +948,13 @@ CloogConstraintSet *cloog_constraint_set_reduce(CloogConstraintSet *constraints,
 	bset = isl_basic_set_add_constraint(bset, c);
 
 	cloog_int_set_si(*bound, 0);
-  isl_val *v = cloog_int_to_isl_val(isl_constraint_get_ctx(c), *bound);
+  isl_val *v = cloog_int_to_isl_val(isl_basic_set_get_ctx(bset), *bound);
 	constraints = cloog_constraint_set_from_isl_basic_set(bset);
 	cloog_constraint_set_foreach_constraint(constraints,
             add_constant_term, &v);
   isl_val_to_cloog_int(v, bound); //return the value to bound
 
+  isl_val_free(v);
 	isl_basic_set_free(orig);
 	return cloog_constraint_set_from_isl_basic_set(bset);
 }

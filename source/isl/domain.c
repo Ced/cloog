@@ -1039,7 +1039,6 @@ static int constraint_stride_lower_c(__isl_take isl_constraint *c, void *user)
 
 	csl->bounds = isl_basic_set_add_constraint(csl->bounds, bound);
 
-  //TODO: free csl_c ??
 	isl_val_free(v);
 	isl_constraint_free(c);
 
@@ -2026,6 +2025,7 @@ int cloog_domain_can_unroll(CloogDomain *domain, int level, cloog_int_t *n,
 
 	*lb = cloog_constraint_from_isl_constraint(ccu.c);
 
+  isl_val_to_cloog_int(ccu.n, n);
   isl_val_free(ccu.n);  // can't do it with v coz it's free'd somewhere inside
 	return ccu.can_unroll;
 }
