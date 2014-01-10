@@ -428,7 +428,7 @@ CloogDomain *cloog_domain_from_context(CloogDomain *context)
 	isl_set *set = isl_set_from_cloog_domain(context);
 
 	set = isl_set_move_dims(set, isl_dim_set, 0,
-			    isl_dim_param, 0, isl_set_dim(set, isl_dim_param));
+				isl_dim_param, 0, isl_set_dim(set, isl_dim_param));
 
 	return cloog_domain_from_isl_set(set);
 }
@@ -449,7 +449,7 @@ CloogDomain *cloog_domain_union_read(CloogState *state,
 	if (isl_set_dim(set, isl_dim_param) != nb_parameters) {
 		int dim = isl_set_dim(set, isl_dim_set);
 		set = isl_set_move_dims(set, isl_dim_param, 0,
-			    isl_dim_set, dim - nb_parameters, nb_parameters);
+					isl_dim_set, dim - nb_parameters, nb_parameters);
 	}
 	return cloog_domain_from_isl_set(set);
 }
@@ -481,7 +481,7 @@ CloogScattering *cloog_domain_read_scattering(CloogDomain *domain, FILE *input)
 	if (isl_map_dim(scat, isl_dim_param) != nparam) {
 		int n_out = isl_map_dim(scat, isl_dim_out);
 		scat = isl_map_move_dims(scat, isl_dim_param, 0,
-					isl_dim_out, n_out - nparam, nparam);
+						isl_dim_out, n_out - nparam, nparam);
 	}
 	if (isl_map_dim(scat, isl_dim_in) != dim) {
 		n_scat = isl_map_dim(scat, isl_dim_out) - dim;
@@ -515,21 +515,17 @@ static struct isl_constraint *isl_constraint_read_from_matrix(
 		constraint = isl_inequality_alloc(ls);
 
 	for (j = 0; j < nvariables; ++j) {
-    isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + j]);
+		isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + j]);
 		isl_constraint_set_coefficient_val(constraint, isl_dim_out, j, val);
-  }
+	}
 
 	for (j = 0; j < nparam; ++j) {
-    isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + nvariables + j]);
+		isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + nvariables + j]);
 		isl_constraint_set_coefficient_val(constraint, isl_dim_param, j, val);
-    //TODO: set_coeff_val() *takes* val. remove below!
-    //isl_val_free(val);
-  }
+	}
 
-  isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + nvariables + nparam]);
+	isl_val *val = cloog_int_to_isl_val(isl_constraint_get_ctx(constraint), row[1 + nvariables + nparam]);
 	isl_constraint_set_constant_val(constraint, val);
-  //TODO: set_const_val() *takes* val. remove below!
-  //isl_val_free(val);
 
 	return constraint;
 }
@@ -623,23 +619,23 @@ CloogScattering *cloog_scattering_from_cloog_matrix(CloogState *state,
  */
 CloogDomain *cloog_domain_from_osl_relation(CloogState *state,
                                             osl_relation_p relation) {
-  char *str;
-  struct isl_ctx *ctx = state->backend->ctx;
-  isl_set *set;
-  CloogDomain *domain = NULL;
+	char *str;
+	struct isl_ctx *ctx = state->backend->ctx;
+	isl_set *set;
+	CloogDomain *domain = NULL;
 
-  if (relation != NULL) {
-    if (relation->precision != OSL_PRECISION_MP)
-      cloog_die("Non-GMP precision is not supported yet.\n");
+	if (relation != NULL) {
+		if (relation->precision != OSL_PRECISION_MP)
+			cloog_die("Non-GMP precision is not supported yet.\n");
 
-    str = osl_relation_spprint_polylib(relation, NULL);
-    set = isl_set_read_from_str(ctx, str);
-    free(str);
+		str = osl_relation_spprint_polylib(relation, NULL);
+		set = isl_set_read_from_str(ctx, str);
+		free(str);
 
-    domain = cloog_domain_from_isl_set(set);
-  }
+		domain = cloog_domain_from_isl_set(set);
+	}
 
-  return domain;
+	return domain;
 }
 
 
@@ -651,26 +647,26 @@ CloogDomain *cloog_domain_from_osl_relation(CloogState *state,
  */
 CloogScattering *cloog_scattering_from_osl_relation(CloogState *state,
                                                     osl_relation_p relation) {
-  char *str;
-  struct isl_ctx *ctx = state->backend->ctx;
-  isl_map *map;
-  CloogScattering *scattering = NULL;
+	char *str;
+	struct isl_ctx *ctx = state->backend->ctx;
+	isl_map *map;
+	CloogScattering *scattering = NULL;
 
-  if (relation != NULL) {
-    if (relation->precision != OSL_PRECISION_MP)
-      cloog_die("Non-GMP precision is not supported yet.\n");
+	if (relation != NULL) {
+		if (relation->precision != OSL_PRECISION_MP)
+			cloog_die("Non-GMP precision is not supported yet.\n");
 
-    if (relation->type != OSL_TYPE_SCATTERING)
-      cloog_die("Cannot convert a non-scattering relation to a scattering.\n");
+		if (relation->type != OSL_TYPE_SCATTERING)
+			cloog_die("Cannot convert a non-scattering relation to a scattering.\n");
 
-    str = osl_relation_spprint_polylib(relation, NULL);
-    map = isl_map_read_from_str(ctx, str);
-    free(str);
+		str = osl_relation_spprint_polylib(relation, NULL);
+		map = isl_map_read_from_str(ctx, str);
+		free(str);
 
-    scattering = cloog_scattering_from_isl_map(map);
-  }
+		scattering = cloog_scattering_from_isl_map(map);
+	}
 
-  return scattering;
+	return scattering;
 }
 #endif
 
@@ -790,21 +786,21 @@ int cloog_domain_is_otl(CloogDomain *domain, int level)
 void cloog_domain_stride(CloogDomain *domain, int strided_level,
 	cloog_int_t *stride, cloog_int_t *offset)
 {
-  int ret = -1;
+	int ret = -1;
 	isl_set *set = isl_set_from_cloog_domain(domain);
-  isl_val *stride_val = NULL;
-  isl_val *offset_val = NULL;
+	isl_val *stride_val = NULL;
+	isl_val *offset_val = NULL;
 	ret = isl_set_dim_residue_class_val(set, strided_level - 1, &stride_val, &offset_val);
-  if(ret!=0)
-    cloog_die("failure to compute stride.\n");
-  isl_val_to_cloog_int(stride_val, stride);
-  isl_val_to_cloog_int(offset_val, offset);
+	if(ret!=0)
+		cloog_die("failure to compute stride.\n");
+	isl_val_to_cloog_int(stride_val, stride);
+	isl_val_to_cloog_int(offset_val, offset);
 
 	if (!cloog_int_is_zero(*offset))
 		cloog_int_sub(*offset, *stride, *offset);
 
-  if(stride_val) isl_val_free(stride_val);
-  if(offset_val) isl_val_free(offset_val);
+	if(stride_val) isl_val_free(stride_val);
+	if(offset_val) isl_val_free(offset_val);
 
 	return;
 }
@@ -830,27 +826,22 @@ static int constraint_can_stride(__isl_take isl_constraint *c, void *user)
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccs->level - 1);
 	if (isl_val_is_pos(v)) {
 		n_div = isl_constraint_dim(c, isl_dim_div);
-    //TODO: free isl_val v
-    isl_val_free(v);
+		isl_val_free(v);
 
 		for (i = 0; i < n_div; ++i) {
 			v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
 			if (!isl_val_is_zero(v)){
-        //TODO: free isl_val v
-        isl_val_free(v);
+				isl_val_free(v);
 				break;
-      }
-      //TODO:else
-      else {
-      //TODO: free isl_val v
-      isl_val_free(v);
-      }
+			}
+			else {
+				isl_val_free(v);
+			}
 		}
 		if (i < n_div)
 			ccs->can_stride = 0;
 	}
-  //TODO:else
-  else
+	else
 	  isl_val_free(v);
 
 	isl_constraint_free(c);
@@ -954,7 +945,7 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 
 		return 0;
 	}
-  isl_val_free(v);
+	isl_val_free(v);
 
 	b = isl_constraint_get_bound(c, isl_dim_set, csl->level - 1);
 
@@ -963,11 +954,8 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 	b = isl_aff_scale_down_val(b, cloog_int_to_isl_val(isl_constraint_get_ctx(c), csl->stride->stride));
 	b = isl_aff_floor(b);
 	b = isl_aff_scale_val(b, cloog_int_to_isl_val(isl_constraint_get_ctx(c), csl->stride->stride));
-    //v = isl_val_int_from_si(isl_constraint_get_ctx(c), 
-    //        cloog_int_to_isl_val(csl->stride->offset));
-    //TODO: replaced above by below!
-    v = cloog_int_to_isl_val(isl_constraint_get_ctx(c), csl->stride->offset);
-    v = isl_val_neg(v);
+	v = cloog_int_to_isl_val(isl_constraint_get_ctx(c), csl->stride->offset);
+	v = isl_val_neg(v);
 	b = isl_aff_add_constant_val(b, v);
 	b = isl_aff_add_coefficient_si(b, isl_dim_in, csl->level - 1, 1);
 
@@ -975,8 +963,6 @@ static int constraint_stride_lower(__isl_take isl_constraint *c, void *user)
 
 	csl->bounds = isl_basic_set_add_constraint(csl->bounds, bound);
 
-  //TODO: aff_*_val() fucntions *take* v. remove below!
-	//isl_val_free(v);
 	isl_constraint_free(c);
 
 	return 0;
@@ -1138,27 +1124,23 @@ static int constraint_bound_split(__isl_take isl_constraint *c, void *user)
 		cbs->lower = handle = 1;
 	else if (!cbs->upper && isl_val_is_neg(v))
 		cbs->upper = handle = 1;
-  //TODO: free isl_val v
-  isl_val_free(v);
+	isl_val_free(v);
 
 	if (handle) {
 		for (i = 0; i < isl_set_dim(cbs->set, isl_dim_param); ++i) {
 			v = isl_constraint_get_coefficient_val(c, isl_dim_param, i);
 			if (isl_val_is_zero(v)){
-        //TODO: free isl_val v
-        isl_val_free(v);
+				isl_val_free(v);
 				continue;
-      }
-      //TODO: free isl_val v
-      isl_val_free(v);
+			}
+			isl_val_free(v);
 
 			cbs->set = isl_set_split_dims(cbs->set,
 							isl_dim_param, i, 1);
 		}
 	}
-  //TODO: else for free below!
-  else
-	  isl_val_free(v);
+	else
+		isl_val_free(v);
 
 	isl_constraint_free(c);
 	return (cbs->lower && cbs->upper) ? -1 : 0;
@@ -1252,7 +1234,7 @@ static int injective_scattering(CloogScatteringList *list)
  * - scattdims is the total number of scattering dimentions.
  */
 int cloog_scattering_lazy_block(CloogScattering *s1, CloogScattering *s2,
-			    CloogScatteringList *scattering, int scattdims)
+			CloogScatteringList *scattering, int scattdims)
 {
 	int i;
 	struct isl_space *dim;
@@ -1274,42 +1256,34 @@ int cloog_scattering_lazy_block(CloogScattering *s1, CloogScattering *s2,
 	rel = isl_map_apply_domain(rel, isl_map_copy(map1));
 	rel = isl_map_apply_range(rel, isl_map_copy(map2));
 	delta = isl_map_deltas(rel);
-    cst = NULL;
+	cst = NULL;
 	for (i = 0; i < n_scat; ++i) {
 		/* fixed = isl_set_fast_dim_is_fixed(delta, i, &cst); */
-        cst = isl_set_plain_get_val_if_fixed(delta, isl_dim_set, i);
+		cst = isl_set_plain_get_val_if_fixed(delta, isl_dim_set, i);
 		if (!cst){
-      //TODO: free isl_val cst
-      isl_val_free(cst);
+			isl_val_free(cst);
 			break;
-    }
+		}
 		if (isl_val_is_zero(cst)){
-      //TODO: free isl_val cst
-      isl_val_free(cst);
+			isl_val_free(cst);
 			continue;
-    }
+		}
 		if (i + 1 < n_scat){
-      //TODO: free isl_val cst
-      isl_val_free(cst);
+			isl_val_free(cst);
 			break;
-    }
+		}
 		if (!isl_val_is_one(cst)){
-      //TODO: free isl_val cst
-      isl_val_free(cst);
+			isl_val_free(cst);
 			break;
-    }
+		}
 		if (!injective_scattering(scattering)){
-      //TODO: free isl_val cst
-      isl_val_free(cst);
+			isl_val_free(cst);
 			break;
-    }
+		}
 
-   //TODO: free isl_val cst
-   isl_val_free(cst);
+		isl_val_free(cst);
 	}
 	block = i >= n_scat;
-  //TODO: isl_val cst free'd above. remove below!
-	//isl_val_free(cst);
 	isl_set_free(delta);
 	return block;
 }
@@ -1414,27 +1388,25 @@ CloogDomain *cloog_domain_simplify_union(CloogDomain *domain)
  * If value is not NULL, then it is set to the constant value of dimension.
  */
 int cloog_scattering_lazy_isscalar(CloogScattering *scatt, int dimension,
-					cloog_int_t *value)
+	cloog_int_t *value)
 {
 	isl_map *map = isl_map_from_cloog_scattering(scatt);
-  //TODO: no isl_val version for below ??
-	//return isl_map_fast_is_fixed(map, isl_dim_out, dimension, value);
 	isl_val *v = isl_map_plain_get_val_if_fixed(map, isl_dim_out, dimension);
-  if(v!=NULL) {
-    if(!isl_val_is_nan(v)){
-      if(value!=NULL)
-        isl_val_to_cloog_int(v, value);
+	if(v!=NULL) {
+		if(!isl_val_is_nan(v)){
+			if(value!=NULL)
+				isl_val_to_cloog_int(v, value);
 
-      isl_val_free(v);
-      return 1;
-    }
-    else{
-      isl_val_free(v);
-      return 0;
-    }
-  }
+			isl_val_free(v);
+			return 1;
+		}
+		else{
+			isl_val_free(v);
+			return 0;
+		}
+	}
 
-  return 0;
+	return 0;
 }
 
 
@@ -1448,24 +1420,22 @@ int cloog_domain_lazy_isconstant(CloogDomain *domain, int dimension,
 	cloog_int_t *value)
 {
 	isl_set *set = isl_set_from_cloog_domain(domain);
-  //TODO: no isl_val version for below ??
-	//return isl_set_fast_dim_is_fixed(set, dimension, value);
-  isl_val *cst = isl_set_plain_get_val_if_fixed(set, isl_dim_set, dimension);
-  if(cst!=NULL) {
-    if(!isl_val_is_nan(cst)){
-      if(value!=NULL)
-        isl_val_to_cloog_int(cst, value);
+	isl_val *cst = isl_set_plain_get_val_if_fixed(set, isl_dim_set, dimension);
+	if(cst!=NULL) {
+		if(!isl_val_is_nan(cst)){
+			if(value!=NULL)
+				isl_val_to_cloog_int(cst, value);
 
-      isl_val_free(cst);
-      return 1;
-    }
-    else{
-      isl_val_free(cst);
-      return 0;
-    }
-  }
+			isl_val_free(cst);
+			return 1;
+		}
+		else{
+			isl_val_free(cst);
+			return 0;
+		}
+	}
 
-  return 0;
+	return 0;
 }
 
 
@@ -1698,7 +1668,7 @@ static void Euclid(cloog_int_t a, cloog_int_t b,
 		cloog_int_mul(tmp, tmp, d);
 		cloog_int_sub(c, c, tmp);
 		cloog_int_swap(c, d);
-	    cloog_int_swap(e, f);
+		cloog_int_swap(e, f);
 	}
 	cloog_int_set(*g, c);
 	if (cloog_int_is_zero(a))
@@ -1736,54 +1706,49 @@ static CloogStride *construct_stride(isl_constraint *c, int level)
 	int i, n, sign;
 	isl_val *v, *m, *gcd, *stride;
 	isl_val *v_copy, *m_copy, *gcd_copy;
-  cloog_int_t c_v, c_m, c_gcd, c_stride, c_factor;
+	cloog_int_t c_v, c_m, c_gcd, c_stride, c_factor;
 	CloogStride *s;
-  isl_ctx *ctx;
+	isl_ctx *ctx;
 
 	if (!c)
 		return NULL;
 
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, level - 1);
-  //v_copy = isl_val_dup(v);
 
 	sign = isl_val_sgn(v);
 	m = isl_val_abs(v); // *takes* v
 
-  ctx = isl_constraint_get_ctx(c);
+	ctx = isl_constraint_get_ctx(c);
 	gcd = isl_val_int_from_si(ctx, 0);
 	n = isl_constraint_dim(c, isl_dim_div);
 	for (i = 0; i < n; ++i) {
 		v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
-    //isl_val_free(v_copy);
-    //v_copy = isl_val_dup(v);
 
 		gcd = isl_val_gcd(gcd, v);
 	}
 
-  //v = isl_val_dup(v_copy);
-  m_copy = isl_val_dup(m);
-  gcd_copy = isl_val_dup(gcd);
+		m_copy = isl_val_dup(m);
+	gcd_copy = isl_val_dup(gcd);
 
-	//gcd = isl_val_gcd(v, m);
 	v = isl_val_gcd(m, gcd);
 
-  v_copy = isl_val_dup(v);
-  gcd = isl_val_dup(gcd_copy);
+	v_copy = isl_val_dup(v);
+	gcd = isl_val_dup(gcd_copy);
 	stride = isl_val_div(gcd, v);
 
 	if (isl_val_is_zero(stride) || isl_val_is_one(stride))
 		s = NULL;
 	else {
-    cloog_int_init(c_m);
-    cloog_int_init(c_stride);
-    cloog_int_init(c_v);
-    cloog_int_init(c_gcd);
-    cloog_int_init(c_factor);
+		cloog_int_init(c_m);
+		cloog_int_init(c_stride);
+		cloog_int_init(c_v);
+		cloog_int_init(c_gcd);
+		cloog_int_init(c_factor);
 
-    isl_val_to_cloog_int(m_copy, &c_m);
-    isl_val_to_cloog_int(stride, &c_stride);
-    isl_val_to_cloog_int(v_copy, &c_v);
-    isl_val_to_cloog_int(gcd_copy, &c_gcd);
+		isl_val_to_cloog_int(m_copy, &c_m);
+		isl_val_to_cloog_int(stride, &c_stride);
+		isl_val_to_cloog_int(v_copy, &c_v);
+		isl_val_to_cloog_int(gcd_copy, &c_gcd);
 
 		Euclid(c_m, c_stride, &c_factor, &c_v, &c_gcd);
 		if (sign > 0)
@@ -1791,14 +1756,14 @@ static CloogStride *construct_stride(isl_constraint *c, int level)
 
 		c = isl_constraint_copy(c);
 		s = cloog_stride_alloc_from_constraint(c_stride,
-			    cloog_constraint_from_isl_constraint(c), c_factor);
+					cloog_constraint_from_isl_constraint(c), c_factor);
 
 
-    cloog_int_clear(c_m);
-    cloog_int_clear(c_stride);
-    cloog_int_clear(c_v);
-    cloog_int_clear(c_gcd);
-    cloog_int_clear(c_factor);
+		cloog_int_clear(c_m);
+		cloog_int_clear(c_stride);
+		cloog_int_clear(c_v);
+		cloog_int_clear(c_gcd);
+		cloog_int_clear(c_factor);
 	}
 
 	isl_val_free(stride);
@@ -1926,16 +1891,16 @@ static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
 	aff = isl_aff_neg(aff);
 	aff = isl_aff_add_coefficient_si(aff, isl_dim_in, ccu->level - 1, 1);
 	/* res = isl_set_max(ccu->set, aff, v); */
-    /* isl_set_max_val behavior has changed */
+	/* isl_set_max_val behavior has changed */
 	*v = isl_set_max_val(ccu->set, aff);
 	isl_aff_free(aff);
 
 	/* if (res == isl_lp_unbounded) */
 	if (isl_val_is_infty(*v) || isl_val_is_neginfty(*v) || isl_val_is_nan(*v) ){
-    isl_val_free(*v);
-    *v = NULL;
+		isl_val_free(*v);
+		*v = NULL;
 		return 0;
-  }
+	}
 
 	/* assert(res == isl_lp_ok); */
 
@@ -1958,15 +1923,13 @@ static int constraint_can_unroll(__isl_take isl_constraint *c, void *user)
 
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccu->level - 1);
 	if (isl_val_is_pos(v) &&
-	    is_valid_unrolling_lower_bound(ccu, c, &count) &&
-	    (!ccu->c || (isl_val_lt(count, ccu->n)==1)) ) {
+			is_valid_unrolling_lower_bound(ccu, c, &count) &&
+			(!ccu->c || (isl_val_lt(count, ccu->n)==1)) ) {
 		isl_constraint_free(ccu->c);
 		ccu->c = isl_constraint_copy(c);
-    if(ccu->n) isl_val_free(ccu->n);
-    ccu->n = count; //isl_val_dup(count);
-    count = NULL;
-		//isl_val_to_cloog_int(isl_val_int_from_si(isl_constraint_get_ctx(c), 
-    //                count), &(ccu->n));
+		if(ccu->n) isl_val_free(ccu->n);
+		ccu->n = count; //isl_val_dup(count);
+		count = NULL;
 	}
 	if(count) isl_val_free(count);
 	isl_val_free(v);
@@ -2009,7 +1972,7 @@ int cloog_domain_can_unroll(CloogDomain *domain, int level, cloog_int_t *n,
 	CloogConstraint **lb)
 {
 	isl_set *set = isl_set_from_cloog_domain(domain);
-  isl_val *v = cloog_int_to_isl_val(isl_set_get_ctx(set), *n);
+	isl_val *v = cloog_int_to_isl_val(isl_set_get_ctx(set), *n);
 	struct cloog_can_unroll ccu = { 1, level, NULL, set, v };
 	int r;
 
@@ -2025,8 +1988,8 @@ int cloog_domain_can_unroll(CloogDomain *domain, int level, cloog_int_t *n,
 
 	*lb = cloog_constraint_from_isl_constraint(ccu.c);
 
-  isl_val_to_cloog_int(ccu.n, n);
-  isl_val_free(ccu.n);  // can't do it with v coz it's free'd somewhere inside
+	isl_val_to_cloog_int(ccu.n, n);
+	isl_val_free(ccu.n);  // can't do it with v coz it's free'd somewhere inside
 	return ccu.can_unroll;
 }
 
@@ -2044,7 +2007,7 @@ CloogDomain *cloog_domain_fixed_offset(CloogDomain *domain,
 {
 	isl_aff *aff;
 	isl_set *set = isl_set_from_cloog_domain(domain);
-  isl_ctx *ctx = isl_set_get_ctx(set);
+	isl_ctx *ctx = isl_set_get_ctx(set);
 	isl_constraint *c;
 	isl_constraint *eq;
 

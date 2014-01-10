@@ -14,19 +14,19 @@
 
 __isl_give isl_val *cloog_int_to_isl_val(isl_ctx* ctx, cloog_int_t c)
 {
-  isl_val *v;
+	isl_val *v;
 #if defined(CLOOG_INT_INT)
-  v = isl_val_int_from_si(ctx, c);
+	v = isl_val_int_from_si(ctx, c);
 #elif defined(CLOOG_INT_LONG)
-  v = isl_val_int_from_si(ctx, c);
+	v = isl_val_int_from_si(ctx, c);
 #elif defined(CLOOG_INT_LONG_LONG)
-  v = isl_val_int_from_si(ctx, c);
+	v = isl_val_int_from_si(ctx, c);
 #elif defined(CLOOG_INT_GMP)
-  v = isl_val_int_from_gmp(ctx, c);
+	v = isl_val_int_from_gmp(ctx, c);
 #else
 #error "No integer type defined"
 #endif
-    return v;
+	return v;
 }
 
 /*
@@ -35,18 +35,15 @@ __isl_give isl_val *cloog_int_to_isl_val(isl_ctx* ctx, cloog_int_t c)
  */
 void isl_val_to_cloog_int(__isl_keep isl_val *val, cloog_int_t *cint)
 {
-//  printf("isval->n=%d, islval->d=%d\n", isl_val_get_num_si(val), isl_val_get_den_si(val));
-//  if(isl_val_get_den_si(val)!=1)
-//    cloog_die("Unexpected non-integer\n");
 
 #if defined(CLOOG_INT_INT)
-  *cint = isl_val_get_num_si(val);
+	*cint = isl_val_get_num_si(val);
 #elif defined(CLOOG_INT_LONG)
-  *cint = isl_val_get_num_si(val);
+	*cint = isl_val_get_num_si(val);
 #elif defined(CLOOG_INT_LONG_LONG)
-  *cint = isl_val_get_num_si(val);
+	*cint = isl_val_get_num_si(val);
 #elif defined(CLOOG_INT_GMP)
-  isl_val_get_num_gmp(val, *cint);
+	isl_val_get_num_gmp(val, *cint);
 #else
 #error "No integer type defined"
 #endif
@@ -96,7 +93,7 @@ int cloog_constraint_set_contains_level(CloogConstraintSet *constraints,
 
 struct cloog_isl_dim {
 	enum isl_dim_type type;
-	int		  pos;
+	int pos;
 };
 
 static struct cloog_isl_dim basic_set_cloog_dim_to_isl_dim(
@@ -202,7 +199,7 @@ CloogConstraint *cloog_constraint_set_defining_inequalities(
 	bset = cloog_constraints_set_to_isl(constraints);
 	dim = set_cloog_dim_to_isl_dim(constraints, level - 1);
 	if (!isl_basic_set_has_defining_inequalities(bset, dim.type, dim.pos,
-								&l, &u))
+	            &l, &u))
 		return cloog_constraint_invalid();
 
 	other.l = l;
@@ -316,71 +313,58 @@ static int cloog_constraint_equal_type(CloogConstraint *cc, int level)
 	c = isl_constraint_get_constant_val(constraint);
 	if (!isl_val_is_zero(c))
 		type = EQTYPE_CONSTANT;
-  //TODO: free isl_val c
-  isl_val_free(c);
+	isl_val_free(c);
 	c = isl_constraint_get_coefficient_val(constraint, isl_dim_set, level - 1);
 	if (!isl_val_is_one(c) && !isl_val_is_negone(c))
 		type = EQTYPE_EXAFFINE;
-  //TODO: free isl_val c
-  isl_val_free(c);
+	isl_val_free(c);
 	for (i = 0; i < isl_constraint_dim(constraint, isl_dim_param); ++i) {
 		c = isl_constraint_get_coefficient_val(constraint, isl_dim_param, i);
 		if (isl_val_is_zero(c)){
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			continue;
-    }
+		}
 		if ((!isl_val_is_one(c) && !isl_val_is_negone(c)) ||
 		    type != EQTYPE_NONE) {
 			type = EQTYPE_EXAFFINE;
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			break;
 		}
 		type = EQTYPE_PUREITEM;
-    //TODO: free isl_val c
-    isl_val_free(c);
+		isl_val_free(c);
 	}
 	for (i = 0; i < isl_constraint_dim(constraint, isl_dim_set); ++i) {
 		if (i == level - 1)
 			continue;
 		c = isl_constraint_get_coefficient_val(constraint, isl_dim_set, i);
 		if (isl_val_is_zero(c)){
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			continue;
-    }
+		}
 		if ((!isl_val_is_one(c) && !isl_val_is_negone(c)) ||
 		    type != EQTYPE_NONE) {
 			type = EQTYPE_EXAFFINE;
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			break;
 		}
 		type = EQTYPE_PUREITEM;
-    //TODO: free isl_val c
-    isl_val_free(c);
+		isl_val_free(c);
 	}
 	for (i = 0; i < isl_constraint_dim(constraint, isl_dim_div); ++i) {
 		c = isl_constraint_get_coefficient_val(constraint, isl_dim_div, i);
 		if (isl_val_is_zero(c)){
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			continue;
-    }
+		}
 		if ((!isl_val_is_one(c) && !isl_val_is_negone(c)) ||
 		    type != EQTYPE_NONE) {
 			type = EQTYPE_EXAFFINE;
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			break;
 		}
 		type = EQTYPE_PUREITEM;
-    //TODO: free isl_val c
-    isl_val_free(c);
+		isl_val_free(c);
 	}
-  //TODO: c already free'd. remove below
-	//isl_val_free(c);
 
 	if (type == EQTYPE_NONE)
 		type = EQTYPE_CONSTANT;
@@ -532,14 +516,12 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 		if (!isl_val_is_zero(c))
 			++nb_elts;
 
-    //TODO: free isl_val c
-    isl_val_free(c);
+		isl_val_free(c);
 	}
 	c = isl_aff_get_constant_val(div);
 	if (!isl_val_is_zero(c))
 		++nb_elts;
-  //TODO: free isl_val c
-  isl_val_free(c);
+	isl_val_free(c);
 
 	r = new_clast_reduction(clast_red_sum, nb_elts);
 	for (i = 0, nb_elts = 0; i < dim; ++i) {
@@ -551,44 +533,38 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 			dim.type = isl_dim_in;
 		c = isl_aff_get_coefficient_val(div, dim.type, dim.pos);
 		if (isl_val_is_zero(c)){
-      //TODO: free isl_val c
-      isl_val_free(c);
+			isl_val_free(c);
 			continue;
-    }
+		}
 
 		v = cloog_constraint_variable_expr(constraint, 1 + i, names);
 
-    cloog_int_t cint;
-    cloog_int_init(cint);
+		cloog_int_t cint;
+		cloog_int_init(cint);
 
-    isl_val_to_cloog_int(c, &cint);
+		isl_val_to_cloog_int(c, &cint);
 		r->elts[nb_elts++] = &new_clast_term(cint, v)->expr;
 
-    //TODO: free isl_val c
-    isl_val_free(c);
-    cloog_int_clear(cint);
+		isl_val_free(c);
+		cloog_int_clear(cint);
 	}
     
-  cloog_int_t cint;
-  cloog_int_init(cint);
+	cloog_int_t cint;
+	cloog_int_init(cint);
 
 	c = isl_aff_get_constant_val(div);
 	if (!isl_val_is_zero(c)) {
-    isl_val_to_cloog_int(c, &cint);
+		isl_val_to_cloog_int(c, &cint);
 		r->elts[nb_elts++] = &new_clast_term(cint, NULL)->expr;
-  }
-  //TODO: free isl_val c
-  isl_val_free(c);
+	}
+	isl_val_free(c);
 
 	c = isl_aff_get_denominator_val(div);
-  isl_val_to_cloog_int(c, &cint);
-  //TODO: free isl_val c
-  isl_val_free(c);
+	isl_val_to_cloog_int(c, &cint);
+	isl_val_free(c);
 	e = &new_clast_binary(clast_bin_fdiv, &r->expr, cint)->expr;
 
-  //TODO: c already free'd. remove below!
-	//isl_val_free(c);
-  cloog_int_clear(cint);
+	cloog_int_clear(cint);
 
 	isl_aff_free(div);
 
@@ -684,10 +660,10 @@ void cloog_constraint_coefficient_get(CloogConstraint *constraint,
 
 	dim = constraint_cloog_dim_to_isl_dim(constraint, var);
 	c = cloog_constraint_to_isl(constraint);
-  isl_val *ival = isl_constraint_get_coefficient_val(c, dim.type, dim.pos);
+	isl_val *ival = isl_constraint_get_coefficient_val(c, dim.type, dim.pos);
 
-  isl_val_to_cloog_int(ival, val);
-  isl_val_free(ival);
+	isl_val_to_cloog_int(ival, val);
+	isl_val_free(ival);
 }
 
 isl_val *cloog_constraint_coefficient_get_val(CloogConstraint *constraint,
@@ -695,7 +671,7 @@ isl_val *cloog_constraint_coefficient_get_val(CloogConstraint *constraint,
 {
 	struct cloog_isl_dim dim;
 	isl_constraint *c;
-    isl_val *val;
+	isl_val *val;
 
 	if (!constraint)
 		return NULL;
@@ -703,7 +679,7 @@ isl_val *cloog_constraint_coefficient_get_val(CloogConstraint *constraint,
 	dim = constraint_cloog_dim_to_isl_dim(constraint, var);
 	c = cloog_constraint_to_isl(constraint);
 	val = isl_constraint_get_coefficient_val(c, dim.type, dim.pos);
-  return val;
+	return val;
 }
 
 
@@ -719,15 +695,15 @@ void cloog_constraint_coefficient_set(CloogConstraint *constraint,
 	dim = constraint_cloog_dim_to_isl_dim(constraint, var);
 	c = cloog_constraint_to_isl(constraint);
 	isl_constraint_set_coefficient_val(c, dim.type, dim.pos, 
-            cloog_int_to_isl_val(isl_constraint_get_ctx(c), val));
+	        cloog_int_to_isl_val(isl_constraint_get_ctx(c), val));
 }
 
 void cloog_constraint_constant_get(CloogConstraint *constraint, cloog_int_t *val)
 {
-  isl_val *ival;
+	isl_val *ival;
 	ival = isl_constraint_get_constant_val(cloog_constraint_to_isl(constraint));
-  isl_val_to_cloog_int(ival, val);
-  isl_val_free(ival);
+	isl_val_to_cloog_int(ival, val);
+	isl_val_free(ival);
 }
 
 
@@ -831,9 +807,6 @@ static int add_constant_term(CloogConstraint *c, void *user)
 
 	v = cloog_constraint_constant_get_val(c);
 	*bound = isl_val_add(*bound, v);
-
-  //TODO: isl_val_add *takes* v. remove below!
-	//isl_val_free(v);
 
 	return 0;
 }
@@ -948,13 +921,13 @@ CloogConstraintSet *cloog_constraint_set_reduce(CloogConstraintSet *constraints,
 	bset = isl_basic_set_add_constraint(bset, c);
 
 	cloog_int_set_si(*bound, 0);
-  isl_val *v = cloog_int_to_isl_val(isl_basic_set_get_ctx(bset), *bound);
+	isl_val *v = cloog_int_to_isl_val(isl_basic_set_get_ctx(bset), *bound);
 	constraints = cloog_constraint_set_from_isl_basic_set(bset);
 	cloog_constraint_set_foreach_constraint(constraints,
-            add_constant_term, &v);
-  isl_val_to_cloog_int(v, bound); //return the value to bound
+	                add_constant_term, &v);
+	isl_val_to_cloog_int(v, bound); //return the value to bound
 
-  isl_val_free(v);
+	isl_val_free(v);
 	isl_basic_set_free(orig);
 	return cloog_constraint_set_from_isl_basic_set(bset);
 }
@@ -1045,9 +1018,6 @@ static isl_aff *extract_stride_offset(__isl_keep isl_constraint *c,
 	u = isl_constraint_get_constant_val(c);
 	u = isl_val_mul(u, cloog_int_to_isl_val(isl_constraint_get_ctx(c), stride->factor));
 	offset = isl_aff_set_constant_val(offset, u);
-
-  //TODO: isl_aff_*_val() fucntions *take* u. remove below!
-	//isl_val_free(u);
 
 	return offset;
 }
