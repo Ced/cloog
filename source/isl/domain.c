@@ -428,7 +428,7 @@ CloogDomain *cloog_domain_from_context(CloogDomain *context)
 	isl_set *set = isl_set_from_cloog_domain(context);
 
 	set = isl_set_move_dims(set, isl_dim_set, 0,
-				isl_dim_param, 0, isl_set_dim(set, isl_dim_param));
+			isl_dim_param, 0, isl_set_dim(set, isl_dim_param));
 
 	return cloog_domain_from_isl_set(set);
 }
@@ -449,7 +449,7 @@ CloogDomain *cloog_domain_union_read(CloogState *state,
 	if (isl_set_dim(set, isl_dim_param) != nb_parameters) {
 		int dim = isl_set_dim(set, isl_dim_set);
 		set = isl_set_move_dims(set, isl_dim_param, 0,
-					isl_dim_set, dim - nb_parameters, nb_parameters);
+				isl_dim_set, dim - nb_parameters, nb_parameters);
 	}
 	return cloog_domain_from_isl_set(set);
 }
@@ -481,7 +481,7 @@ CloogScattering *cloog_domain_read_scattering(CloogDomain *domain, FILE *input)
 	if (isl_map_dim(scat, isl_dim_param) != nparam) {
 		int n_out = isl_map_dim(scat, isl_dim_out);
 		scat = isl_map_move_dims(scat, isl_dim_param, 0,
-						isl_dim_out, n_out - nparam, nparam);
+					isl_dim_out, n_out - nparam, nparam);
 	}
 	if (isl_map_dim(scat, isl_dim_in) != dim) {
 		n_scat = isl_map_dim(scat, isl_dim_out) - dim;
@@ -619,25 +619,24 @@ CloogScattering *cloog_scattering_from_cloog_matrix(CloogState *state,
  */
 CloogDomain *cloog_domain_from_osl_relation(CloogState *state,
                                             osl_relation_p relation) {
-	char *str;
-	struct isl_ctx *ctx = state->backend->ctx;
-	isl_set *set;
-	CloogDomain *domain = NULL;
+  char *str;
+  struct isl_ctx *ctx = state->backend->ctx;
+  isl_set *set;
+  CloogDomain *domain = NULL;
 
-	if (relation != NULL) {
-		if (relation->precision != OSL_PRECISION_MP)
-			cloog_die("Non-GMP precision is not supported yet.\n");
+  if (relation != NULL) {
+    if (relation->precision != OSL_PRECISION_MP)
+      cloog_die("Non-GMP precision is not supported yet.\n");
 
-		str = osl_relation_spprint_polylib(relation, NULL);
-		set = isl_set_read_from_str(ctx, str);
-		free(str);
+    str = osl_relation_spprint_polylib(relation, NULL);
+    set = isl_set_read_from_str(ctx, str);
+    free(str);
 
-		domain = cloog_domain_from_isl_set(set);
-	}
+    domain = cloog_domain_from_isl_set(set);
+  }
 
-	return domain;
+  return domain;
 }
-
 
 /**
  * Converts an openscop scattering relation to a CLooG scattering.
@@ -647,26 +646,26 @@ CloogDomain *cloog_domain_from_osl_relation(CloogState *state,
  */
 CloogScattering *cloog_scattering_from_osl_relation(CloogState *state,
                                                     osl_relation_p relation) {
-	char *str;
-	struct isl_ctx *ctx = state->backend->ctx;
-	isl_map *map;
-	CloogScattering *scattering = NULL;
+  char *str;
+  struct isl_ctx *ctx = state->backend->ctx;
+  isl_map *map;
+  CloogScattering *scattering = NULL;
 
-	if (relation != NULL) {
-		if (relation->precision != OSL_PRECISION_MP)
-			cloog_die("Non-GMP precision is not supported yet.\n");
+  if (relation != NULL) {
+    if (relation->precision != OSL_PRECISION_MP)
+      cloog_die("Non-GMP precision is not supported yet.\n");
 
-		if (relation->type != OSL_TYPE_SCATTERING)
-			cloog_die("Cannot convert a non-scattering relation to a scattering.\n");
+    if (relation->type != OSL_TYPE_SCATTERING)
+      cloog_die("Cannot convert a non-scattering relation to a scattering.\n");
 
-		str = osl_relation_spprint_polylib(relation, NULL);
-		map = isl_map_read_from_str(ctx, str);
-		free(str);
+    str = osl_relation_spprint_polylib(relation, NULL);
+    map = isl_map_read_from_str(ctx, str);
+    free(str);
 
-		scattering = cloog_scattering_from_isl_map(map);
-	}
+    scattering = cloog_scattering_from_isl_map(map);
+  }
 
-	return scattering;
+  return scattering;
 }
 #endif
 
@@ -791,7 +790,7 @@ void cloog_domain_stride(CloogDomain *domain, int strided_level,
 	isl_val *stride_val = NULL;
 	isl_val *offset_val = NULL;
 	ret = isl_set_dim_residue_class_val(set, strided_level - 1, &stride_val, &offset_val);
-	if(ret!=0)
+	if (ret != 0)
 		cloog_die("failure to compute stride.\n");
 	isl_val_to_cloog_int(stride_val, stride);
 	isl_val_to_cloog_int(offset_val, offset);
@@ -799,8 +798,8 @@ void cloog_domain_stride(CloogDomain *domain, int strided_level,
 	if (!cloog_int_is_zero(*offset))
 		cloog_int_sub(*offset, *stride, *offset);
 
-	if(stride_val) isl_val_free(stride_val);
-	if(offset_val) isl_val_free(offset_val);
+	isl_val_free(stride_val);
+	isl_val_free(offset_val);
 
 	return;
 }
@@ -826,23 +825,17 @@ static int constraint_can_stride(__isl_take isl_constraint *c, void *user)
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccs->level - 1);
 	if (isl_val_is_pos(v)) {
 		n_div = isl_constraint_dim(c, isl_dim_div);
-		isl_val_free(v);
 
 		for (i = 0; i < n_div; ++i) {
+			isl_val_free(v);
 			v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
-			if (!isl_val_is_zero(v)){
-				isl_val_free(v);
+			if (!isl_val_is_zero(v))
 				break;
-			}
-			else {
-				isl_val_free(v);
-			}
 		}
 		if (i < n_div)
 			ccs->can_stride = 0;
 	}
-	else
-	  isl_val_free(v);
+	isl_val_free(v);
 
 	isl_constraint_free(c);
 	return 0;
@@ -1124,23 +1117,19 @@ static int constraint_bound_split(__isl_take isl_constraint *c, void *user)
 		cbs->lower = handle = 1;
 	else if (!cbs->upper && isl_val_is_neg(v))
 		cbs->upper = handle = 1;
-	isl_val_free(v);
 
 	if (handle) {
 		for (i = 0; i < isl_set_dim(cbs->set, isl_dim_param); ++i) {
-			v = isl_constraint_get_coefficient_val(c, isl_dim_param, i);
-			if (isl_val_is_zero(v)){
-				isl_val_free(v);
-				continue;
-			}
 			isl_val_free(v);
+			v = isl_constraint_get_coefficient_val(c, isl_dim_param, i);
+			if (isl_val_is_zero(v))
+				continue;
 
 			cbs->set = isl_set_split_dims(cbs->set,
 							isl_dim_param, i, 1);
 		}
 	}
-	else
-		isl_val_free(v);
+	isl_val_free(v);
 
 	isl_constraint_free(c);
 	return (cbs->lower && cbs->upper) ? -1 : 0;
@@ -1392,15 +1381,15 @@ int cloog_scattering_lazy_isscalar(CloogScattering *scatt, int dimension,
 {
 	isl_map *map = isl_map_from_cloog_scattering(scatt);
 	isl_val *v = isl_map_plain_get_val_if_fixed(map, isl_dim_out, dimension);
-	if(v!=NULL) {
-		if(!isl_val_is_nan(v)){
-			if(value!=NULL)
+	if (v != NULL) {
+		if (!isl_val_is_nan(v)){
+			if (value != NULL)
 				isl_val_to_cloog_int(v, value);
 
 			isl_val_free(v);
 			return 1;
 		}
-		else{
+		else {
 			isl_val_free(v);
 			return 0;
 		}
@@ -1421,15 +1410,15 @@ int cloog_domain_lazy_isconstant(CloogDomain *domain, int dimension,
 {
 	isl_set *set = isl_set_from_cloog_domain(domain);
 	isl_val *cst = isl_set_plain_get_val_if_fixed(set, isl_dim_set, dimension);
-	if(cst!=NULL) {
-		if(!isl_val_is_nan(cst)){
-			if(value!=NULL)
+	if (cst != NULL) {
+		if (!isl_val_is_nan(cst)){
+			if (value != NULL)
 				isl_val_to_cloog_int(cst, value);
 
 			isl_val_free(cst);
 			return 1;
 		}
-		else{
+		else {
 			isl_val_free(cst);
 			return 0;
 		}
@@ -1708,7 +1697,7 @@ static CloogStride *construct_stride(isl_constraint *c, int level)
 	isl_val *v_copy, *m_copy, *gcd_copy;
 	cloog_int_t c_v, c_m, c_gcd, c_stride, c_factor;
 	CloogStride *s;
-	isl_ctx *ctx;
+	isl_ctx *ctx = isl_constraint_get_ctx(c);;
 
 	if (!c)
 		return NULL;
@@ -1716,24 +1705,22 @@ static CloogStride *construct_stride(isl_constraint *c, int level)
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, level - 1);
 
 	sign = isl_val_sgn(v);
-	m = isl_val_abs(v); // *takes* v
+	m = isl_val_abs(v); /* *takes* v. */
 
-	ctx = isl_constraint_get_ctx(c);
 	gcd = isl_val_int_from_si(ctx, 0);
 	n = isl_constraint_dim(c, isl_dim_div);
 	for (i = 0; i < n; ++i) {
 		v = isl_constraint_get_coefficient_val(c, isl_dim_div, i);
-
 		gcd = isl_val_gcd(gcd, v);
 	}
 
-		m_copy = isl_val_dup(m);
-	gcd_copy = isl_val_dup(gcd);
+	m_copy = isl_val_copy(m);
+	gcd_copy = isl_val_copy(gcd);
 
 	v = isl_val_gcd(m, gcd);
 
-	v_copy = isl_val_dup(v);
-	gcd = isl_val_dup(gcd_copy);
+	v_copy = isl_val_copy(v);
+	gcd = isl_val_copy(gcd_copy);
 	stride = isl_val_div(gcd, v);
 
 	if (isl_val_is_zero(stride) || isl_val_is_one(stride))
@@ -1895,14 +1882,16 @@ static int is_valid_unrolling_lower_bound(struct cloog_can_unroll *ccu,
 	*v = isl_set_max_val(ccu->set, aff);
 	isl_aff_free(aff);
 
+	/* assert(res == isl_lp_ok); */
+	if (!*v || isl_val_is_nan(*v))
+		cloog_die("Fail to decide about unrolling (cannot find max)");
+
 	/* if (res == isl_lp_unbounded) */
-	if (isl_val_is_infty(*v) || isl_val_is_neginfty(*v) || isl_val_is_nan(*v) ){
+	if (isl_val_is_infty(*v) || isl_val_is_neginfty(*v)){
 		isl_val_free(*v);
 		*v = NULL;
 		return 0;
 	}
-
-	/* assert(res == isl_lp_ok); */
 
 	*v = isl_val_add_ui(*v, 1);
 
@@ -1924,14 +1913,14 @@ static int constraint_can_unroll(__isl_take isl_constraint *c, void *user)
 	v = isl_constraint_get_coefficient_val(c, isl_dim_set, ccu->level - 1);
 	if (isl_val_is_pos(v) &&
 			is_valid_unrolling_lower_bound(ccu, c, &count) &&
-			(!ccu->c || (isl_val_lt(count, ccu->n)==1)) ) {
+			(!ccu->c || (isl_val_lt(count, ccu->n))) ) {
 		isl_constraint_free(ccu->c);
 		ccu->c = isl_constraint_copy(c);
-		if(ccu->n) isl_val_free(ccu->n);
-		ccu->n = count; //isl_val_dup(count);
-		count = NULL;
+		if (ccu->n)
+			isl_val_free(ccu->n);
+		ccu->n = isl_val_copy(count);
 	}
-	if(count) isl_val_free(count);
+	isl_val_free(count);
 	isl_val_free(v);
 	isl_constraint_free(c);
 
@@ -1989,7 +1978,10 @@ int cloog_domain_can_unroll(CloogDomain *domain, int level, cloog_int_t *n,
 	*lb = cloog_constraint_from_isl_constraint(ccu.c);
 
 	isl_val_to_cloog_int(ccu.n, n);
-	isl_val_free(ccu.n);  // can't do it with v coz it's free'd somewhere inside
+	/* Note: we have to free ccu.n and not v because v has been
+	 * freed and replaced in ccu during isl_set_foreach_basic_set 
+	 */
+	isl_val_free(ccu.n);
 	return ccu.can_unroll;
 }
 

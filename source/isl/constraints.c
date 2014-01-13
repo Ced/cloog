@@ -527,6 +527,7 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 	for (i = 0, nb_elts = 0; i < dim; ++i) {
 		struct clast_expr *v;
 		struct cloog_isl_dim dim;
+		cloog_int_t cint;
 
 		dim = constraint_cloog_dim_to_isl_dim(constraint, i);
 		if (dim.type == isl_dim_set)
@@ -539,14 +540,12 @@ static struct clast_expr *div_expr(CloogConstraint *constraint, int pos,
 
 		v = cloog_constraint_variable_expr(constraint, 1 + i, names);
 
-		cloog_int_t cint;
 		cloog_int_init(cint);
-
 		isl_val_to_cloog_int(c, &cint);
 		r->elts[nb_elts++] = &new_clast_term(cint, v)->expr;
+		cloog_int_clear(cint);
 
 		isl_val_free(c);
-		cloog_int_clear(cint);
 	}
     
 	cloog_int_t cint;
