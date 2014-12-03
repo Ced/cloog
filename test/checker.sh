@@ -131,7 +131,7 @@ for x in $TEST_FILES; do
     else
 	echo "generating... \c";
 	$cloog $options -q $input > cloog_temp;
-	diff -u -w --ignore-matching-lines='CLooG' $output cloog_temp;
+	diff -u -w cloog_temp $output | grep -v CLooG;
 	result=$?;
         if [ "$result" -ne "0" ] && [ "$TEST_TYPE" = "regenerate" ]; then
             echo -e "\033[31mREGENERATING... \033[0m";

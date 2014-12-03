@@ -165,7 +165,7 @@ c[i][j] = c[i][j] + a[i][k]*b[k][j];
 
 <coordinates>
 # File name
-openscop/loops.orig.c
+test/openscop/loops.orig.c
 # Starting line and column
 3 0
 # Ending line and column
